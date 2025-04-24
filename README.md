@@ -2,7 +2,7 @@
 
 ## 🚀 How to Run This App on a New Computer
 
-Follow these steps to get the Virginia Tech-themed offline weather + chatbot app up and running on any machine.
+Follow these steps to get this app up and running on any machine.
 
 ### ✅ Prerequisites
 
@@ -15,8 +15,6 @@ Follow these steps to get the Virginia Tech-themed offline weather + chatbot app
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
 
 # 2. Create and activate a virtual environment
 python -m venv venv
@@ -24,12 +22,10 @@ source venv/bin/activate      # For macOS/Linux
 venv\Scripts\activate         # For Windows
 
 # 3. Install required Python packages
-pip install -r requirements.txt
-# (Or manually if needed)
 # pip install streamlit requests
 
 # 4. Pull the LLaMA 3 model for offline chatbot support
-ollama pull llama3
+ollama pull llama3 (I think you have to download it from their website https://ollama.com/download)
 
 # 5. Run the model in a background terminal
 ollama run llama3
