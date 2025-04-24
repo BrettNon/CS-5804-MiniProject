@@ -51,4 +51,4 @@ pip freeze > requirements.txt
 - The chatbot runs completely offline using LLaMA 3 via Ollama
 - Forecast and chatbot are displayed side-by-side in a VT-branded layout
 
-Enjoy your private, offline, Hokie-style weather assistant!
+Enjoy your weather assistant!
