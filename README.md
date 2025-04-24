@@ -22,7 +22,7 @@ source venv/bin/activate      # For macOS/Linux
 venv\Scripts\activate         # For Windows
 
 # 3. Install required Python packages
-# pip install streamlit requests
+pip install streamlit requests
 
 # 4. Pull the LLaMA 3 model for offline chatbot support
 ollama pull llama3 (I think you have to download it from their website https://ollama.com/download)
