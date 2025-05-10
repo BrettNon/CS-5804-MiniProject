@@ -1,6 +1,9 @@
 import streamlit as st
 import requests
-from datetime import datetime
+from datetime import date, datetime
+import pandas as pd
+
+import model_query
 
 # === CONFIG ===
 API_KEY = "487b5fb53375ce05ec087ffe51ebc0d9"
@@ -51,7 +54,7 @@ def get_coordinates(city_name):
     if resp and len(resp) > 0:
         return resp[0]['lat'], resp[0]['lon']
     else:
-        st.warning("City not found. Using default (Blacksburg, VA).")
+        st.warning("City not found. Using default (Blacksburg, Virginia).")
         return DEFAULT_LAT, DEFAULT_LON
 
 def fetch_7_day_forecast(lat, lon):
@@ -83,15 +86,95 @@ def query_llm_ollama(prompt):
                 "prompt": prompt,
                 "stream": False
             },
-            timeout=60
+            timeout=120
         )
         return response.json().get("response", "No response.")
     except Exception as e:
         return f"LLM error: {e}"
+    
+station_to_city = {
+    'New Market Airport': 'New Market', 
+     'Norfolk / Granby Shores': 'Norfolk', 
+     'Norfolk International Airport': 'Norfolk', 
+     'Richmond International  Airport': 'Richmond', 
+     'Wallops Flight Fac Airport': 'Wallops Island', 
+     'Dulles International Airport': 'Dulles', 
+     'Lynchburg Regional Airport': 'Lynchburg', 
+     'Roanoke Regional Airport': 'Roanoke', 
+     'Langley Air Force Base': 'Hampton', 
+     'Jonesville / Cedar Hill': 'Jonesville', 
+     'Wakefield': 'Wakefield', 
+     'South Hill / Brodnax': 'South Hill', 
+     'Blacksburg / Airport Acres': 'Blacksburg', 
+     'Ft Pickett / Blackstone': 'Blackstone', 
+     'Charlottesville / Deerwood': 'Charlottesville', 
+     'Culpeper / Elkwood': 'Culpeper', 
+     'Norfolk / Cornland': 'Norfolk', 
+     'Chase City / Spanish Grove': 'Chase City', 
+     'Danville / Green Acres': 'Danville', 
+     'Emporia / James River Junction': 'Emporia', 
+     'Shannon / Sylvania Heights': 'Shannon', 
+     'Fort Eustis / Hoopes Landing': 'Fort Eustis', 
+     'Richmond / Robinwood': 'Richmond', 
+     'Franklin / Lees Mill': 'Franklin', 
+     'Front Royal / Mineral Springs': 'Front Royal', 
+     'Farmville / Reeds': 'Farmville', 
+     'West Point / Brookeshire': 'West Point', 
+     'Gordonsville': 'Gordonsville', 
+     'Manassas / Bristow': 'Manassas', 
+     'Hillsville / Five Forks': 'Hillsville', 
+     'Hot Springs / Healing Springs': 'Bath County', 
+     'Warrenton / Midland': 'Warrenton', 
+     'Richlands / Birmingham': 'Richlands', 
+     'Williamsburg / Kingspoint': 'Williamsburg', 
+     'Leesburg / Sycolin': 'Leesburg', 
+     'Louisa': 'Louisa', 
+     'Wise / Hurricane': 'Wise', 
+     'Luray / Westlu': 'Luray', 
+     'Lawrenceville / Edgerton': 'Lawrenceville', 
+     'Melfa': 'Melfa', 
+     'Marion / Groseclose': 'Marion', 
+     'Martinsville B Ridge Airport / Old Well Crossing': 'Martinsville', 
+     'Fentress / Mount Pleasant': 'Fentress', 
+     'Virginia Beach / Gatewood Park': 'Virginia Beach', 
+     'Quantico': 'Quantico', 
+     'Richmond / Brown Grove': 'Richmond', 
+     'Winchester / Bufflick Heights': 'Winchester', 
+     'Orange / Nasons': 'Orange', 
+     'Newport News Airport': 'Newport News', 
+     'Dublin / Highland Park': 'Dublin', 
+     'Petersburg / Jack': 'Petersburg', 
+     'Norfolk / Algren': 'Norfolk', 
+     'Stafford / Ramoth Church Estates': 'Stafford', 
+     'Suffolk / Russell': 'Suffolk', 
+     'Staunton / Weyers Cave': 'Staunton', 
+     'Tangier Island': 'Tangier Island', 
+     'Bridgewater / Mount Crawford': 'Bridgewater', 
+     'Abington / Rust Hollow': 'Abington', 
+     'Waynesboro / Claymont Manor': 'Waynesboro', 
+     'Kenbridge / Plymouth': 'Kenbridge', 
+     'Clarksville / Blanks': 'Clarksville', 
+     'Saluda / Locklies': 'Saluda', 
+     'South Boston / Five Forks': 'South Boston', 
+     'Crewe': 'Crewe', 
+     'Quinton / Wrights Corner': 'Quinton', 
+     'Tappahannock / Pauls Crossroads': 'Tappahannock', 
+     'Fort Belvoir': 'Fort Belvoir', 
+     'Lake Anna Airport': 'Bumpass', 
+     'Campbell County Airport': 'Gladys',
+}
 
 # === City Selection ===
-city = st.text_input("Enter a city name (optional):", value="Blacksburg, VA")
-lat, lon = get_coordinates(city)
+df = pd.read_csv('virginia_all_stations_weather.csv')
+stations = df['station_name'].unique().tolist()
+selected_station = st.selectbox("Choose a City / Weather Station", ["Custom"]+ stations)
+
+if selected_station == "Custom":
+    city = st.text_input("Enter a city name (optional):", value="Blacksburg, Virginia")
+    lat, lon = get_coordinates(city)
+else:
+    city = station_to_city[selected_station]
+    lat, lon = get_coordinates(city)
 
 # === Layout: 2 Columns (Forecast | Chatbot) ===
 left_col, right_col = st.columns(2)
@@ -116,8 +199,14 @@ with right_col:
     if summary:
         user_question = st.text_input("Ask a question about the weather:")
         if user_question:
-            prompt = f"The following is a 7-day weather forecast:\n{summary}\n\nQuestion: {user_question}\nAnswer:"
-            with st.spinner("Thinking..."):
-                reply = query_llm_ollama(prompt)
-            st.success(reply)
+            if selected_station == "Custom":
+                prompt = f"Today is {date.today()}\n\nThe following is a 7-day weather forecast:\n{summary}\n\nQuestion: {user_question}\nAnswer:"
+                with st.spinner("Thinking..."):
+                    reply = query_llm_ollama(prompt)
+                st.success(reply)
+            else:
+                prompt = f"Today is {date.today()}\n\nThe following is a 7-day weather forecast:\n{summary}\n\n{model_query.generate_forecast(selected_station, date.today(), 30)}\n\nQuestion: {user_question}\nAnswer:"
+                with st.spinner("Thinking..."):
+                    reply = query_llm_ollama(prompt)
+                st.success(reply)
 
